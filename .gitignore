@@ -1,0 +1,24 @@
+# 忽略 Python 缓存
+__pycache__/
+*.pyc
+
+# 忽略虚拟环境 (你的环境叫 monitor_env，如果在项目里也忽略)
+venv/
+.venv/
+env/
+
+# 忽略爬下来的数据 (重要！)
+MediaCrawler/data/
+MediaCrawler/cache/
+*.json
+*.mp4
+*.jpg
+
+# 忽略数据库
+*.db
+*.sqlite
+
+# 忽略 IDE 配置
+.idea/
+.vscode/
+.DS_Store
