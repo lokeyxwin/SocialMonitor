@@ -3,6 +3,7 @@ import copy
 import json
 import urllib.parse
 from typing import TYPE_CHECKING, Any, Callable, Dict, Union, Optional
+from store.raw_data_store import save_raw_response
 
 import httpx
 from playwright.async_api import BrowserContext
@@ -103,6 +104,16 @@ class DouYinClient(AbstractApiClient, ProxyRefreshMixin):
             if response.text == "" or response.text == "blocked":
                 utils.logger.error(f"request params incrr, response.text: {response.text}")
                 raise Exception("account blocked")
+            json_data = response.json()
+
+            # 🚀 拦截并保存原始数据
+            if json_data:
+                # 拼接完整 URL
+                full_url = url if url.startswith("http") else f"{self._host}{url}"
+                # 异步入库
+                await save_raw_response("dy", full_url, json_data)
+
+            return json_data
             return response.json()
         except Exception as e:
             raise DataFetchError(f"{e}, {response.text}")

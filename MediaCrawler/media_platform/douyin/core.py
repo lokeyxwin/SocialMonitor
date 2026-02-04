@@ -22,7 +22,7 @@ from var import crawler_type_var, source_keyword_var
 
 from .client import DouYinClient
 from .exception import DataFetchError
-from .field import PublishTimeType
+from .field import PublishTimeType, SearchSortType
 from .help import parse_video_info_from_url, parse_creator_info_from_url
 from .login import DouYinLogin
 
@@ -151,6 +151,10 @@ class DouYinCrawler(AbstractCrawler):
                         keyword=keyword,
                         offset=page * dy_limit_count - dy_limit_count,
                         publish_time=PublishTimeType(config.PUBLISH_TIME_TYPE),
+                        
+                        # 【新增】这里读取我们在 config 里的排序配置
+                        sort_type=SearchSortType(config.DY_SEARCH_SORT_TYPE),
+                        
                         search_id=dy_search_id,
                     )
                     if posts_res.get("data") is None or posts_res.get("data") == []:
@@ -279,6 +283,18 @@ class DouYinCrawler(AbstractCrawler):
         utils.logger.info("[DouYinCrawler.get_creators_and_videos] Parsing creator URLs...")
 
         for creator_url in config.DY_CREATOR_ID_LIST:
+            # 自动跳转逻辑：如果传入的是网址，且当前浏览器不在这个网址，就强制跳转
+            if "http" in creator_url and "douyin.com" in creator_url:
+                utils.logger.info(f"🔄 [自动纠正] 正在跳转到目标主页: {creator_url}")
+                try:
+                    await self.context_page.goto(creator_url, timeout=20000)
+                    # 等待一下，让页面加载，避免滑块或风控
+                    await self.context_page.wait_for_load_state("domcontentloaded")
+                    await asyncio.sleep(7)
+                except Exception as e:
+                    utils.logger.warning(f"⚠️ 跳转超时或失败，尝试继续执行: {e}")
+
+
             try:
                 creator_info_parsed = parse_creator_info_from_url(creator_url)
                 user_id = creator_info_parsed.sec_user_id

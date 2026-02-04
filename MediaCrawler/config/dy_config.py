@@ -1,4 +1,9 @@
 # 抖音平台配置
+# ==================== 抖音搜索排序配置 ====================
+# 搜索排序模式
+# 0: 综合排序 (默认)
+# 1: 最热/点赞最多 (Popular)
+# 2: 最新发布 (Latest)
 PUBLISH_TIME_TYPE = 0
 
 # 指定DY视频URL列表 (支持多种格式)
@@ -21,7 +26,7 @@ DY_SPECIFIED_ID_LIST = [
 # 1. 完整创作者主页URL: "https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE?from_tab_name=main"
 # 2. sec_user_id: "MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE"
 DY_CREATOR_ID_LIST = [
-    "https://www.douyin.com/user/MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE?from_tab_name=main",
-    "MS4wLjABAAAATJPY7LAlaa5X-c8uNdWkvz0jUGgpw4eeXIwu_8BhvqE"
+    "https://www.douyin.com/user/MS4wLjABAAAAHrDUdR2RQUKB2ELVAmES-xXs4gQ_qtkNxSbWartbEnA?from_tab_name=main",
+    "MS4wLjABAAAAHrDUdR2RQUKB2ELVAmES-xXs4gQ_qtkNxSbWartbEnA"
     # ........................
 ]

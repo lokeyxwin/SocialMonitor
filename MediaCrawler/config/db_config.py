@@ -1,11 +1,11 @@
 import os
 
 # mysql config
-MYSQL_DB_PWD = os.getenv("MYSQL_DB_PWD", "123456")
-MYSQL_DB_USER = os.getenv("MYSQL_DB_USER", "root")
-MYSQL_DB_HOST = os.getenv("MYSQL_DB_HOST", "localhost")
-MYSQL_DB_PORT = os.getenv("MYSQL_DB_PORT", 3306)
-MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME", "media_crawler")
+MYSQL_DB_PWD = os.getenv("MYSQL_DB_PWD", "000000")
+MYSQL_DB_USER = os.getenv("MYSQL_DB_USER", "sm_dev")
+MYSQL_DB_HOST = os.getenv("MYSQL_DB_HOST", "100.106.200.41")
+MYSQL_DB_PORT = os.getenv("MYSQL_DB_PORT", 3307)
+MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME", "socialmonitor_dev")
 
 mysql_db_config = {
     "user": MYSQL_DB_USER,

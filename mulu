@@ -1,0 +1,72 @@
+05_socialmonitor/                  # [项目根目录]
+├── MediaCrawler/                  # [现有爬虫库] (这是你克隆下来的，保持原样)
+│   ├── config/                    # 爬虫配置 (Cookie, 账号等)
+│   ├── data/                      # 爬虫抓取的临时数据 (json/csv)
+│   ├── media_platform/            # 各平台核心逻辑 (Douyin, XHS)
+│   ├── store/                     # 数据存储逻辑 (MySQL/CSV)
+│   ├── main.py                    # 爬虫启动入口
+│   └── ... (其他原作者文件)
+│
+├── backend/                       # [后端 - FastAPI] (大脑与中枢)
+│   ├── app/
+│   │   ├── api/                   # [接口层] 处理前端发来的请求
+│   │   │   ├── endpoints/
+│   │   │   │   ├── monitor.py     # 监控相关接口 (如：启动任务、停止任务)
+│   │   │   │   ├── analysis.py    # 分析相关接口 (如：返回舆情走势图数据)
+│   │   │   │   └── reports.py     # 报表接口 (导出Excel)
+│   │   │   └── api.py             # 路由汇总
+│   │   │
+│   │   ├── core/                  # [核心配置]
+│   │   │   ├── config.py          # 后端配置 (数据库地址、密钥)
+│   │   │   └── database.py        # 数据库连接池
+│   │   │
+│   │   ├── models/                # [数据模型] (对应数据库表结构)
+│   │   │   ├── keyword.py         # 关键词表 (用户要监控什么)
+│   │   │   └── sentiment.py       # 舆情数据表 (对应爬虫抓回来的数据)
+│   │   │
+│   │   ├── schemas/               # [数据验证] (Pydantic模型，用于API输入输出)
+│   │   │   ├── task.py            # 定义创建一个爬虫任务需要传什么参数
+│   │   │   └── chart.py           # 定义前端图表需要什么格式的数据
+│   │   │
+│   │   ├── services/              # [业务逻辑层] (最关键的桥梁！)
+│   │   │   ├── crawler_runner.py  # ★核心：通过 subprocess 调用 MediaCrawler/main.py
+│   │   │   ├── data_cleaner.py    # 清洗爬虫抓回来的 JSON 数据
+│   │   │   └── nlp_engine.py      # 简单的情感分析 (判断评论是正面还是负面)
+│   │   │
+│   │   └── main.py                # FastAPI 启动入口
+│   │
+│   ├── requirements.txt           # 后端依赖包
+│   └── .env                       # 环境变量 (数据库密码等)
+│
+├── frontend/                      # [前端 - Vue3 + Vite] (监控大屏)
+│   ├── public/
+│   ├── src/
+│   │   ├── api/                   # [API请求] (Axios 封装，请求 backend)
+│   │   │   ├── monitor.js         # 调用后端的监控接口
+│   │   │   └── chart.js           # 获取图表数据
+│   │   │
+│   │   ├── assets/                # 静态资源 (Logo, CSS)
+│   │   ├── components/            # [公共组件]
+│   │   │   ├── Charts/            # ECharts 图表封装
+│   │   │   └── DataTable/         # 数据表格组件
+│   │   │
+│   │   ├── views/                 # [页面]
+│   │   │   ├── Dashboard.vue      # 仪表盘 (舆情总览)
+│   │   │   ├── TaskManager.vue    # 任务管理 (添加关键词、控制爬虫)
+│   │   │   └── DataDetail.vue     # 详细数据列表
+│   │   │
+│   │   ├── router/                # 路由配置
+│   │   ├── store/                 # 状态管理 (Pinia)
+│   │   ├── App.vue                # 根组件
+│   │   └── main.js                # 前端入口
+│   │
+│   ├── package.json               # 前端依赖
+│   └── vite.config.js             # Vite 配置
+│
+├── database/                      # [数据库维护]
+│   ├── init.sql                   # 初始化 SQL 脚本 (建表语句)
+│   └── migrations/                # 数据库版本迁移记录
+│
+└── logs/                          # [全局日志]
+    ├── crawler/                   # 存放 MediaCrawler 产生的日志
+    └── backend/                   # 存放 FastAPI 产生的日志

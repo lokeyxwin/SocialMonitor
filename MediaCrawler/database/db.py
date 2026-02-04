@@ -1,35 +1,37 @@
-# persist-1<persist1@126.com>
-# Reason: Refactored db.py into a module, removed direct execution entry point, fixed relative import issues.
-# Side effects: None
-# Rollback strategy: Restore this file.
-import asyncio
+# 文件路径: MediaCrawler/database/db.py
 import sys
-from pathlib import Path
+from sqlalchemy.ext.asyncio import create_async_engine
+from config import db_config
 
-# Add project root to sys.path
-project_root = Path(__file__).resolve().parents[1]
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
+# 全局单例引擎
+AsyncEngine = None
 
-from tools import utils
-from database.db_session import create_tables
-
-async def init_table_schema(db_type: str):
-    """
-    Initializes the database table schema.
-    This will create tables based on the ORM models.
-    Args:
-        db_type: The type of database, 'sqlite' or 'mysql'.
-    """
-    utils.logger.info(f"[init_table_schema] begin init {db_type} table schema ...")
-    await create_tables(db_type)
-    utils.logger.info(f"[init_table_schema] {db_type} table schema init successful")
-
-async def init_db(db_type: str = None):
-    await init_table_schema(db_type)
+def get_async_engine():
+    global AsyncEngine
+    if AsyncEngine is not None:
+        return AsyncEngine
+    
+    # 构造连接字符串
+    DB_URL = (
+        f"mysql+aiomysql://{db_config.MYSQL_DB_USER}:{db_config.MYSQL_DB_PWD}"
+        f"@{db_config.MYSQL_DB_HOST}:{db_config.MYSQL_DB_PORT}/{db_config.MYSQL_DB_NAME}"
+        f"?charset=utf8mb4"
+    )
+    
+    # 创建引擎 (连接池配置)
+    AsyncEngine = create_async_engine(
+        DB_URL, 
+        echo=False, 
+        pool_size=20,       # 保持20个连接
+        pool_recycle=3600   # 1小时回收
+    )
+    return AsyncEngine
 
 async def close():
-    """
-    Placeholder for closing database connections if needed in the future.
-    """
-    pass
+    global AsyncEngine
+    if AsyncEngine:
+        await AsyncEngine.dispose()
+
+async def init_db(db_type: str = None):
+    from database.db_session import create_tables
+    await create_tables(db_type)

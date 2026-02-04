@@ -51,7 +51,7 @@ BROWSER_LAUNCH_TIMEOUT = 60
 
 # 是否在程序结束时自动关闭浏览器
 # 设置为False可以保持浏览器运行，便于调试
-AUTO_CLOSE_BROWSER = True
+AUTO_CLOSE_BROWSER = False
 
 # 数据保存类型选项配置,支持六种类型：csv、db、json、sqlite、excel、postgres, 最好保存到DB，有排重的功能。
 SAVE_DATA_OPTION = "json"  # csv or db or json or sqlite or excel or postgres
@@ -79,7 +79,7 @@ CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES = 10
 
 # 是否开启爬二级评论模式, 默认不开启爬二级评论
 # 老版本项目使用了 db, 则需参考 schema/tables.sql line 287 增加表字段
-ENABLE_GET_SUB_COMMENTS = False
+ENABLE_GET_SUB_COMMENTS = True
 
 # 词云相关
 # 是否开启生成评论词云图
@@ -98,7 +98,7 @@ STOP_WORDS_FILE = "./docs/hit_stopwords.txt"
 FONT_PATH = "./docs/STZHONGS.TTF"
 
 # 爬取间隔时间
-CRAWLER_MAX_SLEEP_SEC = 2
+CRAWLER_MAX_SLEEP_SEC = 8
 
 from .bilibili_config import *
 from .xhs_config import *
