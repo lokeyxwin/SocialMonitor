@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/2 12:53
-# @Desc    : Crawler utility functions
-
 import base64
 import json
 import random

@@ -1,6 +1,3 @@
-# @Author  : persist-1<persist1@126.com>
-# @Time    : 2025/9/8 00:02
-# @Desc    : Used to compare ORM mapping model (database/models.py) with actual database structure and perform update operations (connect database -> structure comparison -> difference report -> interactive synchronization)
 # @Tips    : This script requires dependency 'pymysql==1.1.0'
 
 import os

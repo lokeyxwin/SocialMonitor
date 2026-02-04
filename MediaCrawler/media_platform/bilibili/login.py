@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/2 18:44
-# @Desc    : bilibili login implementation class
-
 import asyncio
 import functools
 import sys

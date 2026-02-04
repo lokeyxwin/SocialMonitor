@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/23 15:42
-# @Desc    : Weibo login implementation
-
 import asyncio
 import functools
 import sys

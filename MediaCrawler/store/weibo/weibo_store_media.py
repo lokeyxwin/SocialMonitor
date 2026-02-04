@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : Erm
-# @Time    : 2024/4/9 17:35
-# @Desc    : Weibo media storage
 import pathlib
 from typing import Dict
 

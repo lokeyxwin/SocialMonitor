@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2025/7/31
-# @Desc    : WanDou HTTP proxy IP implementation
 import os
 from typing import Dict, List
 from urllib.parse import urlencode

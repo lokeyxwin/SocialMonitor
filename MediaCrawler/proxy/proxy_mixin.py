@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2025/11/25
-# @Desc    : Auto-refresh proxy Mixin class for use by various platform clients
-
 from typing import TYPE_CHECKING, Optional
 
 from tools import utils

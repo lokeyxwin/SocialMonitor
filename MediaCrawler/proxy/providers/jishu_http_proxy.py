@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2024/4/5 09:32
-# @Desc    : Deprecated!!!!! Shut down!!! JiSu HTTP proxy IP implementation. Please use KuaiDaili implementation (proxy/providers/kuaidl_proxy.py)
 import os
 from typing import Dict, List
 from urllib.parse import urlencode

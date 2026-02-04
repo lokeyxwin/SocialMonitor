@@ -1,6 +1,3 @@
-# @Author  : persist1@126.com
-# @Time    : 2025/9/5 19:34
-# @Desc    : Xiaohongshu storage implementation class
 import json
 import os
 from datetime import datetime

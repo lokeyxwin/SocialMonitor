@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/23 15:40
-# @Desc    : Weibo crawler API request client
-
 import asyncio
 import copy
 import json

@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2024/1/14 21:34
-# @Desc    :
-
 import re
 from typing import List
 

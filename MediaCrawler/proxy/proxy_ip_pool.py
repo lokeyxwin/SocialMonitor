@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/2 13:45
-# @Desc    : IP proxy pool implementation
 import random
 from typing import Dict, List
 

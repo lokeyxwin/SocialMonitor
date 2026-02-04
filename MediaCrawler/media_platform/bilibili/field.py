@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/3 16:20
-# @Desc    :
-
 from enum import Enum
 
 

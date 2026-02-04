@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/2 12:55
-# @Desc    : Slider verification utility package
 import os
 from typing import List
 from urllib.parse import urlparse

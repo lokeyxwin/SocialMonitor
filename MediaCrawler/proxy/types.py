@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2024/4/5 10:18
-# @Desc    : Basic types
 import time
 from enum import Enum
 from typing import Optional

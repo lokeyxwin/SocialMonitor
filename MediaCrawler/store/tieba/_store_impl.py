@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : persist1@126.com
-# @Time    : 2025/9/5 19:34
-# @Desc    : Tieba storage implementation class
 import asyncio
 import csv
 import json

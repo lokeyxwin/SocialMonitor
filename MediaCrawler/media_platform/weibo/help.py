@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/24 17:37
-# @Desc    :
-
 from typing import Dict, List
 
 

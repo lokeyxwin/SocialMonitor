@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Author  : relakkes@gmail.com
-# @Time    : 2023/12/2 12:52
-# @Desc    : Time utility functions
-
 import time
 from datetime import datetime, timedelta, timezone
 
