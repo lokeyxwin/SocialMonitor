@@ -25,6 +25,7 @@ from media_platform.weibo import WeiboCrawler
 from media_platform.xhs import XiaoHongShuCrawler
 from media_platform.zhihu import ZhihuCrawler
 from tools.async_file_writer import AsyncFileWriter
+from tools import browser_manager
 from var import crawler_type_var
 
 
@@ -82,6 +83,9 @@ async def main() -> None:
     global crawler
 
     args = await cmd_arg.parse_cmd()
+
+    browser_manager.init_browser_environment()
+    
     if args.init_db:
         await db.init_db(args.init_db)
         print(f"Database {args.init_db} initialized successfully.")

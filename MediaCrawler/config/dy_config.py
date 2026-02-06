@@ -1,10 +1,12 @@
 # 抖音平台配置
+PUBLISH_TIME_TYPE = 0
 # ==================== 抖音搜索排序配置 ====================
 # 搜索排序模式
 # 0: 综合排序 (默认)
 # 1: 最热/点赞最多 (Popular)
 # 2: 最新发布 (Latest)
-PUBLISH_TIME_TYPE = 0
+DY_SEARCH_SORT_TYPE = 0
+
 
 # 指定DY视频URL列表 (支持多种格式)
 # 支持格式:

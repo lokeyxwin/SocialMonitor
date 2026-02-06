@@ -70,7 +70,7 @@ class DouYinCrawler(AbstractCrawler):
             if config.ENABLE_CDP_MODE:
                 # 1. 【新增】给 Playwright 一点时间去“看清”现有的标签页
                 # 很多时候是因为代码跑太快了，浏览器还没告诉代码“我有几个标签页”
-                utils.logger.info("⏳ 正在同步浏览器状态，请稍候 2 秒...")
+                utils.logger.info(f"⏳ 正在同步浏览器状态，请稍候 {2.0:.1f} 秒...")
                 await asyncio.sleep(2.0)
 
                 # 2. 再次检查标签页数量
@@ -177,6 +177,7 @@ class DouYinCrawler(AbstractCrawler):
                         continue
                     aweme_list.append(aweme_info.get("aweme_id", ""))
                     page_aweme_list.append(aweme_info.get("aweme_id", ""))
+                    utils.logger.info(f"📦 [采购员] 拿到原始数据包 (ID: {aweme_info.get('aweme_id')})，任务结束！转交库管员...")
                     await douyin_store.update_douyin_aweme(aweme_item=aweme_info)
                     await self.get_aweme_media(aweme_item=aweme_info)
                 
@@ -184,8 +185,11 @@ class DouYinCrawler(AbstractCrawler):
                 await self.batch_get_note_comments(page_aweme_list)
 
                 # Sleep after each page navigation
-                await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
-                utils.logger.info(f"[DouYinCrawler.search] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after page {page-1}")
+                # await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
+                sleep_time = random.uniform(2, 6) 
+                utils.logger.info(f"[DouYinCrawler.search] [防风控] 翻页休息 {sleep_time:.1f} 秒...")
+                await asyncio.sleep(sleep_time)
+                # utils.logger.info(f"[DouYinCrawler.search] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after page {page-1}")
             utils.logger.info(f"[DouYinCrawler.search] keyword:{keyword}, aweme_list:{aweme_list}")
 
     async def get_specified_awemes(self):
@@ -229,8 +233,11 @@ class DouYinCrawler(AbstractCrawler):
             try:
                 result = await self.dy_client.get_video_by_id(aweme_id)
                 # Sleep after fetching aweme detail
-                await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
-                utils.logger.info(f"[DouYinCrawler.get_aweme_detail] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching aweme {aweme_id}")
+                # await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
+                # utils.logger.info(f"[DouYinCrawler.get_aweme_detail] Sleeping for {config.CRAWLER_MAX_SLEEP_SEC} seconds after fetching aweme {aweme_id}")
+                sleep_time = random.uniform(1.5, 4.0)
+                utils.logger.info(f"[DouYinCrawler.get_aweme_detail] [防风控] 视频详情抓取休息 {sleep_time:.1f} 秒...")
+                await asyncio.sleep(sleep_time)
                 return result
             except DataFetchError as ex:
                 utils.logger.error(f"[DouYinCrawler.get_aweme_detail] Get aweme detail error: {ex}")
@@ -258,6 +265,7 @@ class DouYinCrawler(AbstractCrawler):
     async def get_comments(self, aweme_id: str, semaphore: asyncio.Semaphore) -> None:
         async with semaphore:
             try:
+                utils.logger.info(f"💬 [评论] 正在抓取视频 {aweme_id} 的评论...")
                 # 将关键词列表传递给 get_aweme_all_comments 方法
                 # Use fixed crawling interval
                 crawl_interval = config.CRAWLER_MAX_SLEEP_SEC
@@ -269,47 +277,89 @@ class DouYinCrawler(AbstractCrawler):
                     max_count=config.CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES,
                 )
                 # Sleep after fetching comments
-                await asyncio.sleep(crawl_interval)
-                utils.logger.info(f"[DouYinCrawler.get_comments] Sleeping for {crawl_interval} seconds after fetching comments for aweme {aweme_id}")
-                utils.logger.info(f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} comments have all been obtained and filtered ...")
+                # await asyncio.sleep(crawl_interval)
+                sleep_time = random.uniform(2, 5)
+                utils.logger.info(f"[DouYinCrawler.get_comments] [防风控] 评论抓取休息 {sleep_time:.1f} 秒...")
+                await asyncio.sleep(sleep_time)
+                # utils.logger.info(f"[DouYinCrawler.get_comments] Sleeping for {crawl_interval} seconds after fetching comments for aweme {aweme_id}")
+                # utils.logger.info(f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} comments have all been obtained and filtered ...")
             except DataFetchError as e:
                 utils.logger.error(f"[DouYinCrawler.get_comments] aweme_id: {aweme_id} get comments failed, error: {e}")
 
     async def get_creators_and_videos(self) -> None:
         """
-        Get the information and videos of the specified creator from URLs or IDs
+        获取指定博主的信息和视频 (优先使用命令行输入的链接)
         """
         utils.logger.info("[DouYinCrawler.get_creators_and_videos] Begin get douyin creators")
+        
+        # ================= 1. 确定目标列表 (修正版) =================
+        # 【修正】这里不能用 self.keywords，要用 config.KEYWORDS
+        # 命令行输入的 keywords 会被 main.py 存到 config.KEYWORDS 变量里 (字符串类型)
+        target_list = []
+        
+        if config.KEYWORDS:
+            # 如果是逗号分隔的字符串，切分成列表
+            if isinstance(config.KEYWORDS, str):
+                target_list = [k.strip() for k in config.KEYWORDS.split(',') if k.strip()]
+            elif isinstance(config.KEYWORDS, list):
+                target_list = config.KEYWORDS
+                
+        if len(target_list) > 0:
+            utils.logger.info(f"🎯 [模式] 检测到命令行输入，将爬取 {len(target_list)} 个目标...")
+        else:
+            utils.logger.info(f"📂 [模式] 命令行无输入，将爬取配置文件中的 {len(config.DY_CREATOR_ID_LIST)} 个目标...")
+            target_list = config.DY_CREATOR_ID_LIST
+        # ==========================================================
+
         utils.logger.info("[DouYinCrawler.get_creators_and_videos] Parsing creator URLs...")
 
-        for creator_url in config.DY_CREATOR_ID_LIST:
-            # 自动跳转逻辑：如果传入的是网址，且当前浏览器不在这个网址，就强制跳转
+        for creator_url in target_list:
+            if isinstance(creator_url, str):
+                creator_url = creator_url.replace('\\', '')  # 把反斜杠全部删掉
+            # ================= 2. 自动跳转逻辑 =================
             if "http" in creator_url and "douyin.com" in creator_url:
                 utils.logger.info(f"🔄 [自动纠正] 正在跳转到目标主页: {creator_url}")
                 try:
-                    await self.context_page.goto(creator_url, timeout=20000)
-                    # 等待一下，让页面加载，避免滑块或风控
-                    await self.context_page.wait_for_load_state("domcontentloaded")
-                    await asyncio.sleep(7)
-                except Exception as e:
-                    utils.logger.warning(f"⚠️ 跳转超时或失败，尝试继续执行: {e}")
+                    if self.browser_context and len(self.browser_context.pages) > 0:
+                        page = self.browser_context.pages[0]
+                    else:
+                        page = self.context_page 
 
+                    if creator_url not in page.url:
+                        await page.goto(creator_url, timeout=20000)
+                        await page.wait_for_load_state("domcontentloaded")
+                        
+                        import random
+                        sleep_time = random.uniform(2, 4)
+                        utils.logger.info(f"😴 [防风控] 页面加载后休息 {sleep_time:.1f} 秒...")
+                        await asyncio.sleep(sleep_time)
+                        
+                except Exception as e:
+                    utils.logger.warning(f"⚠️ 跳转超时或失败，尝试继续解析: {e}")
+            # =================================================
 
             try:
                 creator_info_parsed = parse_creator_info_from_url(creator_url)
                 user_id = creator_info_parsed.sec_user_id
-                utils.logger.info(f"[DouYinCrawler.get_creators_and_videos] Parsed sec_user_id: {user_id} from {creator_url}")
+                utils.logger.info(f"[DouYinCrawler.get_creators_and_videos] Parsed sec_user_id: {user_id}")
             except ValueError as e:
                 utils.logger.error(f"[DouYinCrawler.get_creators_and_videos] Failed to parse creator URL: {e}")
                 continue
 
+            # 4. 获取博主档案
             creator_info: Dict = await self.dy_client.get_user_info(user_id)
             if creator_info:
+                name = creator_info.get("user", {}).get("nickname", "未知")
+                utils.logger.info(f"📦 [采购员] 拿到博主【{name}】的档案，转交库管员入库...")
                 await douyin_store.save_creator(user_id, creator=creator_info)
 
-            # Get all video information of the creator
-            all_video_list = await self.dy_client.get_all_user_aweme_posts(sec_user_id=user_id, callback=self.fetch_creator_video_detail)
+            # 5. 获取所有视频列表
+            all_video_list = await self.dy_client.get_all_user_aweme_posts(
+                sec_user_id=user_id, 
+                callback=self.fetch_creator_video_detail
+            )
 
+            # 6. 批量抓取评论
             video_ids = [video_item.get("aweme_id") for video_item in all_video_list]
             await self.batch_get_note_comments(video_ids)
 

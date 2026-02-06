@@ -5,80 +5,52 @@ import config
 from var import source_keyword_var
 from tools import utils
 
-# 【保留】为了防止报错，原作者的类定义必须保留，但在下面不调用它们
-from ._store_impl import *
+# 1. 媒体下载 (存图片/视频文件)
 from .douyin_store_media import *
 
-# 【核心】你的 SocialMonitor 专属存储逻辑
+# 2. 数据库存储 (你写的新逻辑)
 from .socialmonitor_dw_store import (
     insert_search_dy_content,
-    upsert_monitor_dy_creator_daily,
     upsert_monitor_dy_video_daily,
     upsert_monitor_dy_comment,
+    upsert_monitor_dy_creator_daily
 )
 
-class DouyinStoreFactory:
-    STORES = {
-        "csv": DouyinCsvStoreImplement,
-        "db": DouyinDbStoreImplement,
-        "postgres": DouyinDbStoreImplement,
-        "json": DouyinJsonStoreImplement,
-        "sqlite": DouyinSqliteStoreImplement,
-        "mongodb": DouyinMongoStoreImplement,
-        "excel": DouyinExcelStoreImplement,
-    }
-
-    @staticmethod
-    def create_store() -> AbstractStore:
-        store_class = DouyinStoreFactory.STORES.get(config.SAVE_DATA_OPTION)
-        if not store_class:
-            raise ValueError("Invalid save option")
-        return store_class()
-
-# ================= 辅助提取函数 (保持原样) =================
+# ================= 数据清洗辅助函数 =================
 
 def _extract_note_image_list(aweme_detail: Dict) -> List[str]:
-    images_res: List[str] = []
     images: List[Dict] = aweme_detail.get("images", [])
     if not images: return []
-    for image in images:
-        image_url_list = image.get("url_list", [])
-        if image_url_list: images_res.append(image_url_list[-1])
-    return images_res
-
-def _extract_comment_image_list(comment_item: Dict) -> List[str]:
-    images_res: List[str] = []
-    image_list: List[Dict] = comment_item.get("image_list", [])
-    if not image_list: return []
-    for image in image_list:
-        image_url_list = image.get("origin_url", {}).get("url_list", [])
-        if image_url_list and len(image_url_list) > 1: images_res.append(image_url_list[1])
-    return images_res
+    return [img.get("url_list", [])[-1] for img in images if img.get("url_list")]
 
 def _extract_content_cover_url(aweme_detail: Dict) -> str:
-    video_item = aweme_detail.get("video", {})
-    raw_cover_url_list = (video_item.get("raw_cover", {}) or video_item.get("origin_cover", {})).get("url_list", [])
-    if raw_cover_url_list and len(raw_cover_url_list) > 1: return raw_cover_url_list[1]
-    return ""
+    video = aweme_detail.get("video", {})
+    cover = video.get("raw_cover", {}) or video.get("origin_cover", {})
+    urls = cover.get("url_list", [])
+    return urls[1] if len(urls) > 1 else ""
 
 def _extract_video_download_url(aweme_detail: Dict) -> str:
-    video_item = aweme_detail.get("video", {})
-    url_list = video_item.get("play_addr", {}).get("url_list", [])
-    if not url_list: return ""
-    return url_list[-1]
+    video = aweme_detail.get("video", {})
+    urls = video.get("play_addr", {}).get("url_list", [])
+    return urls[-1] if urls else ""
 
 def _extract_music_download_url(aweme_detail: Dict) -> str:
     return aweme_detail.get("music", {}).get("play_url", {}).get("uri", "")
 
-# ================= 核心存储逻辑 (已精简) =================
+# ================= 核心：数据分发逻辑 =================
 
 async def update_douyin_aweme(aweme_item: Dict):
-    """存储视频详情（只存数据库，不生成 CSV/JSON 文件）"""
+    """
+    爬虫拿到数据后，会调用这个函数。
+    我们在这里把数据清洗好，传给 socialmonitor_dw_store
+    """
+    utils.logger.info(f"🏭 [库管员] 收到数据包，正在拆包清洗，准备写入 MySQL...")
     aweme_id = aweme_item.get("aweme_id")
     user_info = aweme_item.get("author", {})
-    interact_info = aweme_item.get("statistics", {})
+    interact = aweme_item.get("statistics", {})
     
-    save_content_item = {
+    # 组装基础数据包 (SocialMonitorStore 会再次提取高级字段如话题等)
+    save_item = {
         "aweme_id": aweme_id,
         "aweme_type": str(aweme_item.get("aweme_type")),
         "title": aweme_item.get("desc", ""),
@@ -86,123 +58,79 @@ async def update_douyin_aweme(aweme_item: Dict):
         "create_time": aweme_item.get("create_time"),
         "user_id": user_info.get("uid"),
         "sec_uid": user_info.get("sec_uid"),
-        "short_user_id": user_info.get("short_id"),
-        "user_unique_id": user_info.get("unique_id"),
-        "user_signature": user_info.get("signature"),
         "nickname": user_info.get("nickname"),
-        "avatar": user_info.get("avatar_thumb", {}).get("url_list", [""])[0],
-        "liked_count": str(interact_info.get("digg_count")),
-        "collected_count": str(interact_info.get("collect_count")),
-        "comment_count": str(interact_info.get("comment_count")),
-        "share_count": str(interact_info.get("share_count")),
+        "liked_count": str(interact.get("digg_count")),
+        "collected_count": str(interact.get("collect_count")),
+        "comment_count": str(interact.get("comment_count")),
+        "share_count": str(interact.get("share_count")),
         "ip_location": aweme_item.get("ip_label", ""),
-        "last_modify_ts": utils.get_current_timestamp(),
         "aweme_url": f"https://www.douyin.com/video/{aweme_id}",
         "cover_url": _extract_content_cover_url(aweme_item),
         "video_download_url": _extract_video_download_url(aweme_item),
-        "music_download_url": _extract_music_download_url(aweme_item),
-        "note_download_url": ",".join(_extract_note_image_list(aweme_item)),
+        # 把原始的 music 字典也传过去，方便 store 提取 BGM 名字
+        "music": aweme_item.get("music", {}),
+        # 关键词 (非常重要，用于区分任务)
         "source_keyword": source_keyword_var.get(),
     }
     
-    utils.logger.info(f"[Store] 处理视频: {aweme_id} | 标题: {save_content_item.get('title')[:20]}")
+    # 记录日志 (会自动写入 SQLite)
+    utils.logger.info(f"💾 [分发] 准备入库: {save_item['title'][:15]}...", extra={"task_mode": "STORE", "keyword": save_item['source_keyword']})
 
-    # 1. 【核心】只执行 SocialMonitor 的入库逻辑
     try:
-        current_keyword = save_content_item.get("source_keyword")
-        if current_keyword:
-            utils.logger.info(f"🔍 [Search] 关键词: {current_keyword} -> search_dy_content")
-            await insert_search_dy_content(save_content_item)
+        if save_item.get("source_keyword"):
+            # 搜索任务 -> 进搜索表
+            await insert_search_dy_content(save_item)
         else:
-            utils.logger.info(f"📈 [Monitor] 定向监控 -> monitor_dy_video_daily")
-            await upsert_monitor_dy_video_daily(save_content_item)
+            # 监控任务 -> 进监控表
+            await upsert_monitor_dy_video_daily(save_item)
     except Exception as e:
-        utils.logger.error(f"❌ [Store] SocialMonitor存储失败: {e}")
+        utils.logger.error(f"❌ 入库失败: {e}", extra={"task_mode": "STORE"})
 
-    # 2. 【屏蔽】原作者的通用存储 (已注释，不再生成垃圾文件)
-    # await DouyinStoreFactory.create_store().store_content(content_item=save_content_item)
-
-
-async def batch_update_dy_aweme_comments(aweme_id: str, comments: List[Dict]):
-    """批量处理评论入口"""
+# 兼容性空函数 (保持空即可，防止报错)
+async def batch_update_dy_aweme_comments(aweme_id, comments): 
     if not comments: return
-    for comment_item in comments:
-        await update_dy_aweme_comment(aweme_id, comment_item)
+    for c in comments: await update_dy_aweme_comment(aweme_id, c)
 
-
-async def update_dy_aweme_comment(aweme_id: str, comment_item: Dict):
-    """单条评论处理"""
-    comment_aweme_id = comment_item.get("aweme_id")
-    if aweme_id != comment_aweme_id:
-        utils.logger.error(f"[store] 评论ID不匹配: {comment_aweme_id} != {aweme_id}")
-        return
-
+async def update_dy_aweme_comment(aweme_id, comment_item):
+    # 调用你的新评论入库逻辑
     user_info = comment_item.get("user", {})
-    save_comment_item = {
-        # 直接获取 cid (修复了之前的变量名 Bug)
-        "comment_id": comment_item.get("cid"), 
-        
-        "create_time": comment_item.get("create_time"),
-        "ip_location": comment_item.get("ip_label", ""),
+    save_item = {
+        "comment_id": comment_item.get("cid"),
         "aweme_id": aweme_id,
         "content": comment_item.get("text"),
         "user_id": user_info.get("uid"),
         "sec_uid": user_info.get("sec_uid"),
-        "short_user_id": user_info.get("short_id"),
-        "user_unique_id": user_info.get("unique_id"),
-        "user_signature": user_info.get("signature"),
         "nickname": user_info.get("nickname"),
-        "avatar": user_info.get("avatar_thumb", {}).get("url_list", [""])[0],
-        "sub_comment_count": str(comment_item.get("reply_comment_total", 0)),
         "like_count": str(comment_item.get("digg_count", 0)),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "sub_comment_count": str(comment_item.get("reply_comment_total", 0)),
+        "create_time": comment_item.get("create_time"),
         "parent_comment_id": comment_item.get("reply_id", "0"),
-        
-        # 提取被回复人ID (修复完善)
-        "reply_to_user_id": str(comment_item.get("reply_to_userid") or comment_item.get("reply_comment_userid") or ""),
-        
-        "pictures": ",".join(_extract_comment_image_list(comment_item)),
+        "reply_to_user_id": str(comment_item.get("reply_to_userid") or ""),
     }
-    
-    # 1. 【屏蔽】原作者的 CSV/JSON 存储
-    # await DouyinStoreFactory.create_store().store_comment(comment_item=save_comment_item)
-    
-    # 2. 【核心】存入 monitor_dy_comment 数据库
-    try:
-        await upsert_monitor_dy_comment(save_comment_item)
-    except Exception as e:
-        utils.logger.error(f"❌ [Store] 评论存储失败: {e}")
+    await upsert_monitor_dy_comment(save_item)
 
+async def update_dy_aweme_image(aweme_id, content, name):
+    await DouYinImage().store_image({"aweme_id": aweme_id, "pic_content": content, "extension_file_name": name})
 
-async def save_creator(user_id: str, creator: Dict):
-    """存储博主信息"""
-    user_info = creator.get("user", {})
-    local_db_item = {
+async def update_dy_aweme_video(aweme_id, content, name):
+    await DouYinVideo().store_video({"aweme_id": aweme_id, "video_content": content, "extension_file_name": name})
+
+async def save_creator(user_id, creator):
+    # 调用你的新博主入库逻辑
+    user = creator.get("user", {})
+    save_item = {
         "user_id": user_id,
-        "sec_uid": user_info.get("sec_uid", ""),
-        "nickname": user_info.get("nickname"),
-        "follows": user_info.get("following_count", 0),
-        "fans": user_info.get("max_follower_count", 0),
-        "interaction": user_info.get("total_favorited", 0),
-        "videos_count": user_info.get("aweme_count", 0),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "sec_uid": user.get("sec_uid"),
+        "nickname": user.get("nickname"),
+        "fans": user.get("max_follower_count"),
+        "follows": user.get("following_count"),
+        "interaction": user.get("total_favorited"),
+        "videos_count": user.get("aweme_count"),
+        "signature": user.get("signature"),
+        "ip_location": user.get("ip_location"),
+        "age": user.get("age"),
+        "gender": user.get("gender"),
+        "mcn_name": user.get("mcn_name"),
+        "avatar": user.get("avatar_thumb", {}).get("url_list", [""])[0],
     }
-    utils.logger.info(f"[Store] 处理博主: {local_db_item['nickname']}")
-    
-    # 1. 【屏蔽】原作者的存储
-    # await DouyinStoreFactory.create_store().store_creator(local_db_item)
-    
-    # 2. 【核心】存入 monitor_dy_creator_daily 数据库
-    try:
-        await upsert_monitor_dy_creator_daily(local_db_item)
-    except Exception as e:
-        utils.logger.error(f"❌ [Store] 博主日报存储失败: {e}")
-
-
-async def update_dy_aweme_image(aweme_id, pic_content, extension_file_name):
-    """图片下载逻辑 (依赖 ENABLE_GET_MEIDAS 配置)"""
-    await DouYinImage().store_image({"aweme_id": aweme_id, "pic_content": pic_content, "extension_file_name": extension_file_name})
-
-async def update_dy_aweme_video(aweme_id, video_content, extension_file_name):
-    """视频下载逻辑 (依赖 ENABLE_GET_MEIDAS 配置)"""
-    await DouYinVideo().store_video({"aweme_id": aweme_id, "video_content": video_content, "extension_file_name": extension_file_name})
+    await upsert_monitor_dy_creator_daily(save_item)

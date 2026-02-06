@@ -10,7 +10,7 @@ def init_loging_config():
     level = logging.INFO
     logging.basicConfig(
         level=level,
-        format="%(asctime)s %(name)s %(levelname)s (%(filename)s:%(lineno)d) - %(message)s",
+        format="[%(asctime)s] [%(name)s] [%(levelname)-8s] [%(filename)s:%(lineno)d] [%(funcName)s] - %(message)s",
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     _logger = logging.getLogger("MediaCrawler")
